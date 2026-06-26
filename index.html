@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-title" content="Next Trip">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Next Trip</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2336;
+    --border: #1e2d45;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59,130,246,0.18);
+    --text: #e8edf5;
+    --muted: #64748b;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --radius: 14px;
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 56px 20px 0;
+    text-align: center;
+    position: relative;
+  }
+  .logo {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  header h1 span {
+    color: var(--accent);
+  }
+  .header-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Nav tabs ── */
+  .nav {
+    display: flex;
+    gap: 6px;
+    padding: 20px 20px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 4px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: var(--font);
+  }
+  .nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── Sections ── */
+  .section { display: none; padding: 0 20px; }
+  .section.active { display: block; }
+
+  /* ── Form ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  input[type="date"], input[type="number"], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 11px 14px;
+    font-family: var(--font);
+    -webkit-appearance: none;
+    outline: none;
+    transition: border-color 0.15s;
+    color-scheme: dark;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* scope toggle */
+  .scope-toggle {
+    display: flex;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .scope-toggle button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: background 0.15s, color 0.15s;
+  }
+  .scope-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* search button */
+  .btn-search {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 15px;
+    cursor: pointer;
+    font-family: var(--font);
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-bottom: 20px;
+  }
+  .btn-search:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    display: none;
+    margin-bottom: 16px;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-bar-track {
+    background: var(--surface);
+    border-radius: 99px;
+    height: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ── Results ── */
+  #results-list { padding-bottom: calc(20px + var(--safe-bottom)); }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    text-decoration: none;
+    display: block;
+  }
+  .result-card:active { transform: scale(0.985); border-color: var(--accent); }
+
+  .result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .dest-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .dest-iata {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+  .price-badge {
+    background: var(--accent-glow);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .result-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .meta-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .meta-tag .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .cta-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .cta-link {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Empty / error states */
+  .state-box {
+    text-align: center;
+    padding: 48px 20px;
+  }
+  .state-icon { font-size: 40px; margin-bottom: 12px; }
+  .state-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .state-sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* ── Destinations manager ── */
+  .dest-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .dest-header h2 { font-size: 16px; font-weight: 700; }
+  .dest-count { font-size: 12px; color: var(--muted); }
+
+  .btn-sm {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+  .btn-sm.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .dest-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .dest-item-star {
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+    transition: transform 0.1s;
+  }
+  .dest-item-star:active { transform: scale(1.3); }
+  .dest-item-info { flex: 1; min-width: 0; }
+  .dest-item-name { font-size: 14px; font-weight: 600; }
+  .dest-item-iata { font-size: 11px; color: var(--muted); }
+  .dest-item-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .add-dest-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .add-dest-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 12px;
+    font-family: var(--font);
+    outline: none;
+  }
+  .add-dest-row input::placeholder { color: var(--muted); }
+  .add-dest-row input:focus { border-color: var(--accent); }
+
+  .reset-link {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 20px;
+    cursor: pointer;
+    padding: 10px;
+    text-decoration: underline;
+    padding-bottom: calc(10px + var(--safe-bottom));
+  }
+
+  /* results summary bar */
+  .results-bar {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .results-bar strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Next Series</div>
+  <h1>Next <span>Trip</span></h1>
+  <p class="header-sub">¿Adónde puedes ir desde PMI?</p>
+</header>
+
+<nav class="nav">
+  <button class="active" onclick="switchTab('search')">🔍 Buscar</button>
+  <button onclick="switchTab('results')">✈️ Resultados</button>
+  <button onclick="switchTab('destinations')">📍 Destinos</button>
+</nav>
+
+<!-- ══ TAB SEARCH ══ -->
+<div id="tab-search" class="section active">
+  <div class="card">
+    <div class="field">
+      <label>Fecha de salida</label>
+      <input type="date" id="dep-date">
+    </div>
+    <div class="field row-2">
+      <div>
+        <label>Días de estancia</label>
+        <select id="days">
+          <option value="1">1 día</option>
+          <option value="2">2 días</option>
+          <option value="3">3 días</option>
+          <option value="4">4 días</option>
+          <option value="5">5 días</option>
+          <option value="6">6 días</option>
+          <option value="7" selected>7 días</option>
+        </select>
+      </div>
+      <div>
+        <label>Presupuesto máx.</label>
+        <input type="number" id="max-price" value="300" min="1" step="10">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label style="margin-bottom:10px">Buscar en</label>
+    <div class="scope-toggle">
+      <button class="active" id="scope-all" onclick="setScope('all')">🌍 Todos</button>
+      <button id="scope-fav" onclick="setScope('fav')">⭐ Favoritos</button>
+    </div>
+  </div>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-label" id="progress-label">Buscando…</div>
+  </div>
+
+  <button class="btn-search" id="btn-search" onclick="startSearch()">Buscar destinos</button>
+</div>
+
+<!-- ══ TAB RESULTS ══ -->
+<div id="tab-results" class="section">
+  <div id="results-placeholder" class="state-box">
+    <div class="state-icon">🗺️</div>
+    <div class="state-title">Sin resultados aún</div>
+    <div class="state-sub">Configura una búsqueda en la pestaña Buscar y pulsa el botón.</div>
+  </div>
+  <div id="results-list" style="display:none"></div>
+</div>
+
+<!-- ══ TAB DESTINATIONS ══ -->
+<div id="tab-destinations" class="section">
+  <div class="dest-header">
+    <h2>Destinos</h2>
+    <span class="dest-count" id="dest-count"></span>
+  </div>
+  <div id="dest-list"></div>
+  <div class="add-dest-row">
+    <input type="text" id="new-iata" placeholder="IATA (ej: BCN)" maxlength="3">
+    <input type="text" id="new-city" placeholder="Ciudad (ej: Barcelona)" style="flex:2">
+    <button class="btn-sm accent" onclick="addDest()">+ Añadir</button>
+  </div>
+  <span class="reset-link" onclick="resetDests()">Restaurar lista original</span>
+</div>
+
+<script>
+// ─── Worker URL ───────────────────────────────────────────────────────────────
+const WORKER_URL = 'https://nex-flight.alewein.worver.dev'; // ← reemplazar con tu Worker
+
+// ─── Destinos semilla directos desde PMI ─────────────────────────────────────
+const SEED_DESTINATIONS = [
+  // España domésticos
+  { iata:'MAD', city:'Madrid' },
+  { iata:'BCN', city:'Barcelona' },
+  { iata:'VLC', city:'Valencia' },
+  { iata:'SVQ', city:'Sevilla' },
+  { iata:'AGP', city:'Málaga' },
+  { iata:'BIO', city:'Bilbao' },
+  { iata:'SCQ', city:'Santiago de Compostela' },
+  { iata:'VGO', city:'Vigo' },
+  { iata:'OVD', city:'Asturias' },
+  { iata:'SDR', city:'Santander' },
+  { iata:'GRX', city:'Granada' },
+  { iata:'MJV', city:'Murcia' },
+  { iata:'ACE', city:'Lanzarote' },
+  { iata:'TFS', city:'Tenerife Sur' },
+  { iata:'TFN', city:'Tenerife Norte' },
+  { iata:'LPA', city:'Gran Canaria' },
+  { iata:'FUE', city:'Fuerteventura' },
+  { iata:'PMI', city:'Palma (skip)', _skip:true },
+  // UK
+  { iata:'LGW', city:'Londres Gatwick' },
+  { iata:'LHR', city:'Londres Heathrow' },
+  { iata:'STN', city:'Londres Stansted' },
+  { iata:'LTN', city:'Londres Luton' },
+  { iata:'MAN', city:'Mánchester' },
+  { iata:'EDI', city:'Edimburgo' },
+  { iata:'BRS', city:'Bristol' },
+  { iata:'BHX', city:'Birmingham' },
+  { iata:'NCL', city:'Newcastle' },
+  // Alemania
+  { iata:'DUS', city:'Düsseldorf' },
+  { iata:'FRA', city:'Frankfurt' },
+  { iata:'MUC', city:'Múnich' },
+  { iata:'HAM', city:'Hamburgo' },
+  { iata:'TXL', city:'Berlín' },
+  { iata:'BER', city:'Berlín Brandenburg' },
+  { iata:'CGN', city:'Colonia' },
+  { iata:'STR', city:'Stuttgart' },
+  { iata:'NUE', city:'Núremberg' },
+  { iata:'HAJ', city:'Hannover' },
+  // Francia
+  { iata:'CDG', city:'París CDG' },
+  { iata:'ORY', city:'París Orly' },
+  { iata:'LYS', city:'Lyon' },
+  { iata:'MRS', city:'Marsella' },
+  { iata:'NCE', city:'Niza' },
+  { iata:'TLS', city:'Toulouse' },
+  { iata:'NTE', city:'Nantes' },
+  { iata:'BOD', city:'Burdeos' },
+  { iata:'LIG', city:'Limoges' },
+  // Italia
+  { iata:'FCO', city:'Roma Fiumicino' },
+  { iata:'CIA', city:'Roma Ciampino' },
+  { iata:'MXP', city:'Milán Malpensa' },
+  { iata:'BGY', city:'Milán Bérgamo' },
+  { iata:'LIN', city:'Milán Linate' },
+  { iata:'VCE', city:'Venecia' },
+  { iata:'BLQ', city:'Bolonia' },
+  { iata:'PSA', city:'Pisa' },
+  { iata:'NAP', city:'Nápoles' },
+  { iata:'CTA', city:'Catania' },
+  { iata:'PMO', city:'Palermo' },
+  // Países Bajos / Bélgica / Suiza
+  { iata:'AMS', city:'Ámsterdam' },
+  { iata:'EIN', city:'Eindhoven' },
+  { iata:'BRU', city:'Bruselas' },
+  { iata:'CRL', city:'Bruselas Charleroi' },
+  { iata:'ZRH', city:'Zúrich' },
+  { iata:'GVA', city:'Ginebra' },
+  { iata:'BSL', city:'Basilea' },
+  // Escandinavia
+  { iata:'ARN', city:'Estocolmo' },
+  { iata:'CPH', city:'Copenhague' },
+  { iata:'OSL', city:'Oslo' },
+  { iata:'HEL', city:'Helsinki' },
+  // Europa del Este
+  { iata:'WAW', city:'Varsovia' },
+  { iata:'KRK', city:'Cracovia' },
+  { iata:'PRG', city:'Praga' },
+  { iata:'VIE', city:'Viena' },
+  { iata:'BUD', city:'Budapest' },
+  { iata:'BEG', city:'Belgrado' },
+  { iata:'SOF', city:'Sofía' },
+  { iata:'OTP', city:'Bucarest' },
+  { iata:'KBP', city:'Kiev' },
+  // Portugal
+  { iata:'LIS', city:'Lisboa' },
+  { iata:'OPO', city:'Oporto' },
+  { iata:'FAO', city:'Faro' },
+  // Grecia / Turquía / Chipre
+  { iata:'ATH', city:'Atenas' },
+  { iata:'SKG', city:'Tesalónica' },
+  { iata:'HER', city:'Heraclión (Creta)' },
+  { iata:'CFU', city:'Corfú' },
+  { iata:'RHO', city:'Rodas' },
+  { iata:'IST', city:'Estambul' },
+  { iata:'SAW', city:'Estambul Sabiha' },
+  { iata:'ECN', city:'Chipre Norte (Ercan)' },
+  { iata:'LCA', city:'Lárnaca' },
+  // Irlanda / Escocia
+  { iata:'DUB', city:'Dublín' },
+  // Marruecos
+  { iata:'RAK', city:'Marrakech' },
+  { iata:'CMN', city:'Casablanca' },
+  // EEUU (ruta larga directa)
+  { iata:'EWR', city:'Nueva York Newark' },
+];
+
+// filtrar _skip
+const ALL_DESTINATIONS = SEED_DESTINATIONS.filter(d => !d._skip);
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let destinations = [];  // { iata, city, fav }
+let searchScope = 'all';
+let searching = false;
+
+function loadDests() {
+  const saved = localStorage.getItem('ne_destinations');
+  if (saved) {
+    destinations = JSON.parse(saved);
+  } else {
+    destinations = ALL_DESTINATIONS.map(d => ({ ...d, fav: false }));
+  }
+}
+
+function saveDests() {
+  localStorage.setItem('ne_destinations', JSON.stringify(destinations));
+}
+
+function resetDests() {
+  if (!confirm('¿Restaurar la lista original? Se perderán tus cambios.')) return;
+  destinations = ALL_DESTINATIONS.map(d => ({ ...d, fav: false }));
+  saveDests();
+  renderDests();
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const idx = { search: 0, results: 1, destinations: 2 }[name];
+  document.querySelectorAll('.nav button')[idx].classList.add('active');
+  if (name === 'destinations') renderDests();
+}
+
+// ─── Scope toggle ─────────────────────────────────────────────────────────────
+function setScope(s) {
+  searchScope = s;
+  document.getElementById('scope-all').classList.toggle('active', s === 'all');
+  document.getElementById('scope-fav').classList.toggle('active', s === 'fav');
+}
+
+// ─── Init date ────────────────────────────────────────────────────────────────
+function initDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  document.getElementById('dep-date').value = d.toISOString().slice(0,10);
+}
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+async function startSearch() {
+  if (searching) return;
+
+  const depDate = document.getElementById('dep-date').value;
+  const days = parseInt(document.getElementById('days').value);
+  const maxPrice = parseFloat(document.getElementById('max-price').value);
+
+  if (!depDate) return alert('Elige una fecha de salida.');
+  if (!maxPrice || maxPrice <= 0) return alert('Introduce un presupuesto.');
+
+  const pool = searchScope === 'fav'
+    ? destinations.filter(d => d.fav)
+    : destinations;
+
+  if (pool.length === 0) {
+    return alert(searchScope === 'fav'
+      ? 'No tienes destinos favoritos. Márcalos con ⭐ en la pestaña Destinos.'
+      : 'No hay destinos en la lista.');
+  }
+
+  // Calcular fecha vuelta
+  const retDate = new Date(depDate);
+  retDate.setDate(retDate.getDate() + days);
+  const retDateStr = retDate.toISOString().slice(0,10);
+
+  searching = true;
+  document.getElementById('btn-search').disabled = true;
+  const pw = document.getElementById('progress-wrap');
+  pw.classList.add('visible');
+  setProgress(0, `Buscando 0 / ${pool.length} destinos…`);
+
+  // Ir a pestaña resultados
+  switchTab('results');
+  document.getElementById('results-placeholder').style.display = 'none';
+  const list = document.getElementById('results-list');
+  list.style.display = 'block';
+  list.innerHTML = `<div class="state-box"><div class="state-icon">⏳</div><div class="state-title">Buscando vuelos…</div><div class="state-sub">Consultando ${pool.length} destinos en paralelo.</div></div>`;
+
+  // Lanzar en paralelo con concurrencia limitada
+  const CONCURRENCY = 8;
+  const results = [];
+  let done = 0;
+
+  async function fetchDest(dest) {
+    const params = new URLSearchParams({
+      origin: 'PMI',
+      destination: dest.iata,
+      mode: 'date',
+      dateFrom: depDate,
+      dateTo: retDateStr,
+      adults: 1,
+      cabin: 'ECONOMY',
+      priceType: 'roundtrip',
+      nonStop: 'true',
+    });
+
+    try {
+      const url = WORKER_URL === 'WORKER_URL'
+        ? null
+        : `${WORKER_URL}/search?${params}`;
+
+      if (!url) {
+        // Demo mode: simular respuesta
+        return null;
+      }
+
+      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const offers = (data.offers || []).filter(o => o.price <= maxPrice);
+      if (offers.length === 0) return null;
+      const best = offers[0];
+      return {
+        iata: dest.iata,
+        city: dest.city,
+        price: best.price,
+        airline: best.airline || best.carrier || '—',
+        flightNumber: best.flight_number || '',
+        depTime: best.departure_time || '',
+        arrTime: best.arrival_time || '',
+        gfLink: buildGFLink(dest.iata, depDate, retDateStr),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // Pool con concurrencia
+  let idx = 0;
+  async function worker() {
+    while (idx < pool.length) {
+      const dest = pool[idx++];
+      const result = await fetchDest(dest);
+      done++;
+      setProgress(done / pool.length, `Buscando ${done} / ${pool.length} destinos…`);
+      if (result) results.push(result);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(CONCURRENCY, pool.length) }, worker);
+  await Promise.all(workers);
+
+  // Render results
+  results.sort((a, b) => a.price - b.price);
+  renderResults(results, depDate, retDateStr, maxPrice, pool.length);
+
+  searching = false;
+  document.getElementById('btn-search').disabled = false;
+  pw.classList.remove('visible');
+}
+
+function setProgress(ratio, label) {
+  document.getElementById('progress-fill').style.width = (ratio * 100).toFixed(1) + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+
+function buildGFLink(dest, dep, ret) {
+  // Google Flights deep link
+  const base = 'https://www.google.com/travel/flights';
+  const params = new URLSearchParams({
+    q: `Flights from PMI to ${dest} on ${dep} returning ${ret}`,
+  });
+  // Formato directo de GF
+  return `https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI1LTAxLTAxagcIARIDUE1JcgcIARIDQUNFQAFIAXABggELCP___________wGSAQIIAQ&hl=es`
+    .replace('2025-01-01', dep)
+    .replace('ACE', dest);
+}
+
+function buildGFLinkReal(iata, dep, ret) {
+  // Enlace directo funcional a Google Flights
+  const d1 = dep.replace(/-/g, '');
+  const d2 = ret.replace(/-/g, '');
+  return `https://www.google.com/travel/flights?q=vuelos+PMI+${iata}+${dep}+vuelta+${ret}`;
+}
+
+function renderResults(results, dep, ret, maxPrice, total) {
+  const list = document.getElementById('results-list');
+
+  if (WORKER_URL === 'WORKER_URL') {
+    // Demo: mostrar aviso de configuración
+    list.innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">⚙️</div>
+        <div class="state-title">Worker no configurado</div>
+        <div class="state-sub">Reemplaza <code>WORKER_URL</code> en el código con la URL de tu Cloudflare Worker para obtener resultados reales.</div>
+      </div>`;
+    return;
+  }
+
+  if (results.length === 0) {
+    list.innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">😔</div>
+        <div class="state-title">Sin vuelos en presupuesto</div>
+        <div class="state-sub">No encontramos vuelos directos por menos de ${maxPrice} € entre los ${total} destinos buscados. Prueba a aumentar el presupuesto o cambiar la fecha.</div>
+      </div>`;
+    return;
+  }
+
+  const bar = `<div class="results-bar">
+    <span><strong>${results.length}</strong> destinos encontrados de ${total}</span>
+    <span>máx. <strong>${maxPrice} €</strong></span>
+  </div>`;
+
+  const cards = results.map(r => {
+    const gfLink = buildGFLinkReal(r.iata, dep, ret);
+    const depFmt = dep.split('-').reverse().join('/');
+    const retFmt = ret.split('-').reverse().join('/');
+    return `
+    <a class="result-card" href="${gfLink}" target="_blank" rel="noopener">
+      <div class="result-top">
+        <div>
+          <div class="dest-name">${r.city}</div>
+          <div class="dest-iata">${r.iata} · ida y vuelta</div>
+        </div>
+        <div class="price-badge">${r.price} €</div>
+      </div>
+      <div class="result-meta">
+        <span class="meta-tag"><span class="dot"></span>Directo</span>
+        <span class="meta-tag">✈ ${r.airline}</span>
+        <span class="meta-tag">📅 ${depFmt} → ${retFmt}</span>
+        ${r.depTime ? `<span class="meta-tag">🕐 ${r.depTime}</span>` : ''}
+      </div>
+      <div class="cta-row">
+        <span class="cta-link">Ver en Google Flights →</span>
+      </div>
+    </a>`;
+  }).join('');
+
+  list.innerHTML = bar + cards;
+}
+
+// ─── Destinations tab ─────────────────────────────────────────────────────────
+function renderDests() {
+  const favs = destinations.filter(d => d.fav).length;
+  const total = destinations.length;
+  document.getElementById('dest-count').textContent = `${total} destinos · ${favs} favoritos`;
+
+  const sorted = [...destinations].sort((a, b) => {
+    if (a.fav !== b.fav) return b.fav - a.fav;
+    return a.city.localeCompare(b.city);
+  });
+
+  document.getElementById('dest-list').innerHTML = sorted.map((d, i) => {
+    const realIdx = destinations.indexOf(d);
+    return `
+    <div class="dest-item" id="ditem-${realIdx}">
+      <span class="dest-item-star" onclick="toggleFav(${realIdx})">${d.fav ? '⭐' : '☆'}</span>
+      <div class="dest-item-info">
+        <div class="dest-item-name">${d.city}</div>
+        <div class="dest-item-iata">${d.iata}</div>
+      </div>
+      <button class="dest-item-del" onclick="delDest(${realIdx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleFav(idx) {
+  destinations[idx].fav = !destinations[idx].fav;
+  saveDests();
+  renderDests();
+}
+
+function delDest(idx) {
+  destinations.splice(idx, 1);
+  saveDests();
+  renderDests();
+}
+
+function addDest() {
+  const iata = document.getElementById('new-iata').value.trim().toUpperCase();
+  const city = document.getElementById('new-city').value.trim();
+  if (iata.length !== 3) return alert('El código IATA debe tener 3 letras.');
+  if (!city) return alert('Escribe el nombre de la ciudad.');
+  if (destinations.find(d => d.iata === iata)) return alert(`${iata} ya está en la lista.`);
+  destinations.push({ iata, city, fav: false });
+  saveDests();
+  document.getElementById('new-iata').value = '';
+  document.getElementById('new-city').value = '';
+  renderDests();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadDests();
+initDate();
+</script>
+</body>
+</html>
