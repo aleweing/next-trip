@@ -760,23 +760,58 @@ function setProgress(ratio, label) {
   document.getElementById('progress-label').textContent = label;
 }
 
-function buildGFLink(dest, dep, ret) {
-  // Google Flights deep link
-  const base = 'https://www.google.com/travel/flights';
-  const params = new URLSearchParams({
-    q: `Flights from PMI to ${dest} on ${dep} returning ${ret}`,
-  });
-  // Formato directo de GF
-  return `https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI1LTAxLTAxagcIARIDUE1JcgcIARIDQUNFQAFIAXABggELCP___________wGSAQIIAQ&hl=es`
-    .replace('2025-01-01', dep)
-    .replace('ACE', dest);
+// ─── Enlace a Google Flights ──────────────────────────────────────────────────
+// Google Flights codifica la búsqueda en el parámetro `tfs`: un mensaje
+// protobuf en base64url. Lo construimos a mano (sin dependencias).
+// legs: [{ date:'YYYY-MM-DD', from:'PMI', to:'LGW' }, ...]  (1 = solo ida, 2 = ida y vuelta)
+// opts: { adults:1, cabin:'ECONOMY'|'PREMIUM_ECONOMY'|'BUSINESS'|'FIRST' }
+function buildGoogleFlightsUrl(legs, opts = {}) {
+  const varint = (n) => {
+    const out = [];
+    let v = BigInt.asUintN(64, BigInt(n));
+    do {
+      let byte = Number(v & 0x7fn);
+      v >>= 7n;
+      if (v) byte |= 0x80;
+      out.push(byte);
+    } while (v);
+    return out;
+  };
+  const utf8 = (s) => Array.from(new TextEncoder().encode(s));
+  const fVarint = (field, n) => [...varint((field << 3) | 0), ...varint(n)];
+  const fBytes = (field, bytes) => [...varint((field << 3) | 2), ...varint(bytes.length), ...bytes];
+  const airport = (iata) => [...fVarint(1, 1), ...fBytes(2, utf8(iata))];
+
+  const CABINS = { ECONOMY: 1, PREMIUM_ECONOMY: 2, BUSINESS: 3, FIRST: 4 };
+  const adults = Math.max(1, Math.min(9, parseInt(opts.adults, 10) || 1));
+
+  let msg = [...fVarint(1, 28), ...fVarint(2, 2)];
+  for (const leg of legs) {
+    msg.push(...fBytes(3, [
+      ...fBytes(2, utf8(leg.date)),
+      ...fBytes(13, airport(leg.from)),
+      ...fBytes(14, airport(leg.to)),
+    ]));
+  }
+  for (let i = 0; i < adults; i++) msg.push(...fVarint(8, 1));
+  msg.push(
+    ...fVarint(9, CABINS[opts.cabin] || 1),
+    ...fVarint(14, 1),
+    ...fBytes(16, fVarint(1, -1)),
+    ...fVarint(19, legs.length > 1 ? 1 : 2), // 1 = ida y vuelta, 2 = solo ida
+  );
+
+  const tfs = btoa(String.fromCharCode(...msg))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `https://www.google.com/travel/flights/search?tfs=${tfs}&hl=es&curr=EUR`;
 }
 
-function buildGFLinkReal(iata, dep, ret) {
-  // Enlace directo funcional a Google Flights
-  const d1 = dep.replace(/-/g, '');
-  const d2 = ret.replace(/-/g, '');
-  return `https://www.google.com/travel/flights?q=vuelos+PMI+${iata}+${dep}+vuelta+${ret}`;
+// Ida PMI → destino y vuelta destino → PMI en las fechas buscadas.
+function buildGFLink(dest, dep, ret) {
+  return buildGoogleFlightsUrl([
+    { date: dep, from: 'PMI', to: dest },
+    { date: ret, from: dest, to: 'PMI' },
+  ]);
 }
 
 function renderResults(results, dep, ret, maxPrice, total) {
@@ -809,7 +844,7 @@ function renderResults(results, dep, ret, maxPrice, total) {
   </div>`;
 
   const cards = results.map(r => {
-    const gfLink = buildGFLinkReal(r.iata, dep, ret);
+    const gfLink = r.gfLink;
     const depFmt = dep.split('-').reverse().join('/');
     const retFmt = ret.split('-').reverse().join('/');
     return `
